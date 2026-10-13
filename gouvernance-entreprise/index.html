@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gouvernance d'entreprise – V ou F d'examen</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--ink:#1c2430;--mute:#5d6877;--line:#d9dee6;--ok:#1f7a4d;--okbg:#e3f4ea;--ko:#b3322b;--kobg:#fbe7e5;--warn:#8a5a00;--warnbg:#fff3d6;--acc:#1d4f91}
+@media(prefers-color-scheme:dark){:root{--bg:#14181f;--card:#1d232d;--ink:#e8ecf2;--mute:#9aa6b6;--line:#303947;--ok:#6fd3a0;--okbg:#17352a;--ko:#ff9a92;--kobg:#3b1f1d;--warn:#f0c46a;--warnbg:#3a2f12;--acc:#8db8f0}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Georgia,"Times New Roman",serif}
+main{max-width:720px;margin:0 auto;padding:16px 16px 64px}
+header{position:sticky;top:0;background:var(--bg);padding:12px 0;border-bottom:1px solid var(--line);z-index:2}
+h1{font-size:1.25rem;margin:0 0 8px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-family:system-ui,sans-serif;font-size:.9rem}
+select,button{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);cursor:pointer}
+select:focus-visible,button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+#score{margin-left:auto;font-weight:600}
+h2{font-size:1.05rem;margin:28px 0 8px;color:var(--acc)}
+.q{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0}
+.q p{margin:0 0 10px}
+.btns{display:flex;gap:8px;font-family:system-ui,sans-serif}
+.btns button{min-width:84px}
+.q.done .btns button{cursor:default}
+.btns button.good{background:var(--okbg);border-color:var(--ok);color:var(--ok);font-weight:600}
+.btns button.bad{background:var(--kobg);border-color:var(--ko);color:var(--ko)}
+.fb{display:none;margin-top:10px;font-family:system-ui,sans-serif;font-size:.9rem}
+.q.done .fb{display:block}
+.fb b.r{color:var(--ok)}.fb b.w{color:var(--ko)}
+.note{margin-top:6px;color:var(--mute)}
+.flag{background:var(--warnbg);color:var(--warn);padding:6px 8px;border-radius:6px;margin-top:6px}
+
+/* ---- Questions ouvertes (section indépendante du QCM) ---- */
+#oq{scroll-margin-top:110px;margin-top:48px;padding-top:8px;border-top:2px solid var(--line)}
+#oq h2{margin-top:16px;font-size:1.15rem}
+.oq-intro{color:var(--mute);margin:0 0 10px;font-size:.95rem}
+.oq-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-family:system-ui,sans-serif;font-size:.9rem;margin-bottom:8px}
+#oq-score{margin-left:auto;font-weight:600}
+.oq-link{font-family:system-ui,sans-serif;font-size:.9rem;color:var(--acc)}
+.oq-card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0}
+.oq-tag{font-family:system-ui,sans-serif;font-size:.75rem;font-weight:600;color:var(--acc);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.oq-q{margin:0 0 10px}
+.oq-ans{margin-top:12px;font-size:.95rem}
+.oq-ans[hidden]{display:none}
+.oq-pts{margin:0;padding-left:1.2rem}
+.oq-pts li{margin:0 0 8px}
+.oq-self{display:flex;gap:8px;margin-top:12px;font-family:system-ui,sans-serif}
+.oq-self button.on-ok{background:var(--okbg);border-color:var(--ok);color:var(--ok);font-weight:600}
+.oq-self button.on-ko{background:var(--kobg);border-color:var(--ko);color:var(--ko);font-weight:600}
+.oq-empty{color:var(--mute);font-family:system-ui,sans-serif}
+</style>
+</head>
+<body>
+<div style="max-width:720px;margin:0 auto;padding:14px 20px 0"><a href="../index.html" style="font:13.5px system-ui,sans-serif;color:#6B7680;text-decoration:none">← Choix du cours</a></div>
+<main>
+<header>
+<h1>Gouvernance d'entreprise – V ou F d'examen</h1>
+<div class="bar">
+<select id="ch" aria-label="Chapitre"></select>
+<button id="shuf">Mélanger</button>
+<button id="rst">Recommencer</button>
+<span id="score" aria-live="polite"></span>
+<a class="oq-link" href="#oq">Questions ouvertes ↓</a>
+</div>
+</header>
+<div id="list"></div>
+
+<section id="oq">
+<h2>Questions ouvertes</h2>
+<p class="oq-intro">Essaie de répondre de tête, puis affiche les points clés et note-toi : « Je savais » ou « À revoir ». Ce ne sont pas des réponses rédigées, seulement les éléments à retrouver. <a class="oq-link" href="#">↑ Retour au QCM</a></p>
+<div class="oq-bar">
+<select id="oq-filter" aria-label="Filtrer les questions ouvertes">
+<option value="all">Toutes</option>
+<option value="exam">Tombées à l’examen (série B)</option>
+<option value="redo">À revoir</option>
+</select>
+<button id="oq-reset">Réinitialiser</button>
+<span id="oq-score" aria-live="polite"></span>
+</div>
+<div id="oq-list"></div>
+</section>
+
+</main>
+<script>
+// [énoncé, 1=Vrai / 0=Faux, note]. Note commençant par ✏️ = réponse corrigée, ⚠️ = à vérifier.
+const D=[
+["GE-B. Gouvernance d'entreprise – Série B",[
+["L’éclatement de la structure de propriété d’une entreprise ne facilite pas une opération de rachat par une autre entreprise",0,"Ça permet d’être plus facilement racheté."],
+["Le retrait de l’Etat d’une structure de propriété d’entreprise empêche le rachat par une autre entreprise",0,"Ça facilite, car c’est l’Etat qui empêche les rachats externes."],
+["L’intrusion massive de l’Etat dans une structure de propriété pourrait entraîner une chute de la valeur boursière",1],
+["Un actionnariat dilué constitue une garantie de maintien du modèle stratégique",0,"Beaucoup d’actionnaires, donc ils peuvent changer : vulnérable aux OPA."],
+["Les brisures stratégiques sont d’autant plus faciles à orchestrer que l’entreprise est multi-produit",1,"Changer de stratégie."],
+["L’attachement émotionnel est relié à des entreprises fortement contrôlées des investisseurs institutionnels",0,"Les investisseurs institutionnels n’ont pas d’attache."],
+["Le Conseil d’Administration ne reprend que des représentants de personnes physiques ou morales ayant un lien d’affaires avec l’entreprise",0,"CA : administrateurs dépendants (lien avec l’entreprise, donc internes + actionnaire principal) ou indépendants (expertise)."],
+["Les investisseurs institutionnels ne permettent pas de réduire les problèmes d’agence dans une entreprise",0,"Pression sur les dirigeants, baisse des coûts d’agence."],
+["Les asymétries informationnelles ne favorisent pas l’enracinement des dirigeants",0,"Tout le monde n’a pas les mêmes informations ; on ne peut pas les sortir facilement."],
+["Des fonds de pension ne peuvent pas être assimilés à des investisseurs institutionnels",0,"Hedge funds, banques, assurances, fonds d’investissement + fonds de pension."],
+["Les investisseurs institutionnels sont toujours passifs",0,"Il y a des actifs et des passifs."],
+["Les coalitions actionnariales peuvent faire l’objet d’une relation contractuelle",1,"Agissements de concert."],
+["Les investisseurs institutionnels peuvent être cotés en Bourse",1,"Exemple : dans le BEL20, il y en a 5."],
+["Un investisseur institutionnel non coté en Bourse sera plus passif que s’il est coté en Bourse",1,"Non coté → passif ; coté → actif."],
+["Les augmentations de capital ne sont pas recherchées par les investisseurs institutionnels",1],
+["L’objectif principal des investisseurs institutionnels n’est pas de prendre le contrôle des entreprises",1,"But premier : amener la plus-value boursière et les dividendes."],
+["Dans l’esprit des investisseurs institutionnels, des rachats d’actions sont assimilables à une augmentation de capital",0,"→ plus-value."],
+["La cotation en Bourse facilite l’apparition de problèmes d’agence",1,"Pression boursière."],
+["L’incorporation d’une partie importante du résultat net dans les fonds propres n’est pas recherchée par les investisseurs institutionnels",1,"Préfèrent des dividendes plus généreux que la mise en réserve."],
+["Il n’existe pas de liaison entre des opérations de désinvestissements sélectifs et l’opérabilité d’une entreprise",0,"Vendre des participations ↔ OPA : il y a un lien."],
+["L’activisme d’un investisseur institutionnel n’est pas inversement proportionnel à ses niveaux de participation",1,"Plus il a de parts, moins il est actif."],
+["Les investisseurs institutionnels de long terme possèdent un nombre peu élevé de participation mais d’ampleur importante",1,"LT : beaucoup d’argent dans peu d’entreprises. CT : peu d’argent dans plusieurs entreprises."],
+["Les contacts entre les investisseurs institutionnels de long terme et les dirigeants de l’entreprise ne sont pas plus nombreux s’il s’agit d’un investisseur de LT que de CT",0,"Les investisseurs LT et les dirigeants ont plus de contacts, car les LT veulent changer la stratégie."],
+["La revente des participations détenues par des investisseurs institutionnels long terme ne peut pas mettre à mal la pérennité de l’entreprise",0,"Dans le temps : risque de faillite, car la revente est un signal de méfiance."],
+["La non-rencontre des attentes des investisseurs institutionnels de long terme peut mettre à mal la pérennité de l’entreprise",1],
+["Pour l’exercice de leur activisme, les investisseurs institutionnels de LT privilégieront des structures de propriété accessibles",1],
+["La croissance des ventes peut constituer un élément attractif pour les investisseurs institutionnels",0,"Ils visent une faible croissance mais une forte rentabilité."],
+["La politique de distribution des dividendes peut constituer un élément attractif pour les investisseurs institutionnels",1],
+["Après une opération de scission d’entreprise, les investisseurs institutionnels de long terme demeurent systématiquement dans le capital des deux entreprises",0,"Ils peuvent rester ou revendre."],
+["Dans le modèle stakeholders, on ne retrouve que des entreprises familiales et celles contrôlées par l’Etat",0,"Il y a aussi l’autocratie, le personnel."],
+["Dans le BEL20, il y a une surreprésentation de sociétés immobilières comparativement au CAC40",1],
+["Le CAC40 présente une configuration générale shareholders",0,"Le CAC40 est stakeholders (22) plutôt que shareholders (18)."],
+["Le BEL20 est caractérisé par une vision de capitalisme patrimonial moderniste",0,"C’est un capitalisme patrimonial traditionnel."],
+["En travaillant en termes de coalitions actionnariales, les quatre variables mesurant les rapports de force entre actionnaires sont calculables",0,"Seulement V1 et V2 (pas V3 ni V4)."],
+["La variable V2 mesurant le rapport de force entre le premier et le deuxième actionnaire reprend au dénominateur la part détenue par le deuxième actionnaire",0,"V2 = (part 1 − part 2) / part 1 : c’est la part du premier actionnaire au dénominateur."],
+["Des niveaux élevés de flottant pour constituer un facteur d’attrait pour le positionnement institutionnel",1,"Effet mouton."],
+["Le travail en termes de coalitions actionnaires permet de dégager des rapports de force entre une vision stakeholder et une vision shareholder",1],
+["Sur le marché belge, les placements des investisseurs institutionnels sont réalisés dans une optique de diversification de portefeuille",1],
+["Le marché belge n’est pas caractérisé par des mouvements importants sur le capital des entreprises",1,"Marché calme."],
+["Sur le marché belge, les rapports de force entre les actionnaires sont clairement en faveur du premier actionnaire",1]]],
+["GE-C. Gouvernance d'entreprise – Série C",[
+["L’éclatement de la structure de propriété d’une entreprise facilite une opération de rachat par une autre entreprise",1],
+["Le retrait de l’Etat d’une structure de propriété d’une entreprise cotée en Bourse pourrait provoquer une augmentation de la valeur de l’entreprise",1],
+["L’intrusion massive de l’Etat dans une structure de propriété pourrait entraîner une augmentation de la valeur boursière",0,"Décote boursière."],
+["Le retrait d’un investisseur institutionnel LT d’une structure de propriété provoque une augmentation de la valeur boursière de l’entreprise",0,"Effet négatif."],
+["Un actionnariat dilué constitue une garantie de maintien du modèle stratégique",0,"Fragilisé."],
+["Les brisures stratégiques sont d’autant plus faciles à orchestrer que l’entreprise est multi-produit",1],
+["L’attachement émotionnel est relié à des entreprises fortement contrôlées par des familles",1],
+["La composition du Conseil d’Administration est censée refléter la structure de propriété des entreprises",1],
+["Les opérations de scission d’entreprises provoquent un gain boursier pour les deux entreprises nouvellement créées",1],
+["Les investisseurs institutionnels permettent de réduire les problèmes d’agence dans une entreprise",1],
+["Les problèmes d’agence dans une entreprise concernent essentiellement les entreprises familiales",0,"Les problèmes d’agence se voient surtout dans les entreprises à capital dispersé."],
+["La dispersion du capital favorise l’enracinement des dirigeants",1],
+["Les asymétries informationnelles ne favorisent pas l’enracinement des dirigeants",0],
+["Des fonds de pension peuvent être assimilés à des investisseurs institutionnels",1],
+["Les coalitions actionnariales font l’objet d’une relation contractuelle",1],
+["Les investisseurs institutionnels sont toujours cotés en Bourse",0,"Il y a des investisseurs non cotés et des cotés."],
+["Un investisseur institutionnel sera d’autant plus actif que lui-même est coté en Bourse",1],
+["L’objectif principal des investisseurs institutionnels n’est pas de prendre le contrôle des entreprises",1,"→ plus-value."],
+["Dans l’esprit des investisseurs institutionnels, des rachats d’actions ne sont pas assimilables à une augmentation de capital",1],
+["La cotation en Bourse facilite l’apparition de problèmes d’agence",1],
+["Si un investisseur institutionnel détient 8% du capital, il ne doit pas préciser son intention ou non de modifier la stratégie de l’émetteur",1,"Seuil à partir de 10 % ; et dès 5 % → déclaration d’intentions."],
+["Les investisseurs institutionnels de long terme possèdent un nombre peu élevé de participation mais d’ampleur importante",1],
+["La revente des participations détenues par des investisseurs institutionnels long terme peut mettre à mal la pérennité de l’entreprise",1],
+["La revente des participations détenues par des investisseurs institutionnels de court terme ne peut pas mettre à mal la pérennité de l’entreprise",1],
+["Dans le modèle shareholders, on ne retrouve que des entreprises avec des structures de propriété éclatées et des entreprises contrôlées par des investisseurs institutionnels",0,"⚠️ À VÉRIFIER. Le « ne … que » rend l'énoncé faux : il existe aussi d'autres cas (portefeuille industriel ?)."],
+["Le CAC40 présente une configuration générale stakeholders",1,"22 stakeholders sur 40."],
+["Le BEL20 est caractérisé par une vision de capitalisme patrimonial traditionnel",1],
+["La variable V2 mesurant le rapport de force entre le premier et le deuxième actionnaire ne reprend pas au dénominateur la part détenue par le premier actionnaire",0,"✏️ En retirant « ne … pas », la phrase deviendrait vraie. Telle quelle, elle est FAUX : V2 = (part 1 − part 2) / part 1, donc la part du premier actionnaire est bien au dénominateur."],
+["Le travail en termes de coalitions actionnariales ne permet pas nécessairement de dégager des rapports de force entre une vision stakeholder et une vision shareholder",0,"✏️ En retirant « ne … pas », la phrase deviendrait vraie. Telle quelle, elle est FAUX : le travail en coalitions permet de dégager ces rapports de force."],
+["Le marché belge est caractérisé par des mouvements importants sur le capital des entreprises",0,"Marché stable."],
+["La construction de coalitions actionnariales ne permet pas de décrire de manière plus précise les conflits entre les dirigeants et les actionnaires",0,"✏️ En retirant « ne … pas », la phrase deviendrait vraie. Telle quelle, elle est FAUX : construire des coalitions permet de décrire plus précisément ces conflits."],
+["Le modèle de cœur financier français en trois pôles était caractérisé par des participations croisées entre les entreprises",1,"SG, BNP, AXA/UAP."],
+["La volonté d’extraction de la rente boursière à court terme est caractéristique du modèle stakeholder",0,"C’est le modèle shareholder (le modèle stakeholder vise le consensus)."],
+["Sur le marché belge, ce sont les familles qui détiennent le plus d’entreprises du BEL20",1],
+["La présence des investisseurs institutionnels permet la défense des intérêts des actionnaires minoritaires",1],
+["L’éclatement de la Société Générale de Belgique a entraîné de massifs transferts de propriété vers l’Italie",0,"✏️ Avec « l'Italie », la phrase est FAUX : les transferts se sont faits vers Suez, vers la France."],
+["La Société Générale de Belgique avait mis en place des mesures de protection de son capital",1,"Résister à l’OPA de Benedetti en 1988."],
+["La participation de l’Etat dans les entreprises du CAC40 est uniforme",0,"Pas la même participation partout."],
+["La nationalisation constitue une prise de contrôle des entreprises par l’Etat",1,"Exemple : Mitterrand."],
+["Les investisseurs institutionnels ne sont jamais présents dans les structures de propriété familiale",0,"✏️ En retirant « jamais », la phrase deviendrait vraie. Telle quelle, elle est FAUX : ils peuvent être présents (ex. Amber, Vivendi chez Lagardère), mais pour diversifier le portefeuille."]]]
+];
+const $=s=>document.querySelector(s);
+let items=[],ok=0,tot=0;
+const sel=$("#ch");
+sel.innerHTML='<option value="-1">Tous les chapitres</option>'+D.map((c,i)=>`<option value="${i}">${c[0]}</option>`).join("");
+function build(shuffle){
+  const v=+sel.value;ok=tot=0;
+  let list=D.flatMap((c,ci)=>c[1].map(q=>({ci,q}))).filter(x=>v<0||x.ci===v);
+  if(shuffle)list.sort(()=>Math.random()-.5);
+  const root=$("#list");root.innerHTML="";
+  let last=-1;
+  list.forEach(({ci,q},n)=>{
+    if(!shuffle&&ci!==last){last=ci;const h=document.createElement("h2");h.textContent=D[ci][0];root.appendChild(h)}
+    const d=document.createElement("div");d.className="q";
+    d.innerHTML=`<p></p><div class="btns"><button data-a="1">Vrai</button><button data-a="0">Faux</button></div><div class="fb"></div>`;
+    d.querySelector("p").textContent=(shuffle?`[${D[ci][0].split(".")[0]}] `:"")+q[0];
+    d.querySelectorAll("button").forEach(b=>b.onclick=()=>answer(d,q,+b.dataset.a));
+    root.appendChild(d);
+  });
+  items=list;upd();
+}
+function answer(d,q,a){
+  if(d.classList.contains("done"))return;
+  d.classList.add("done");tot++;
+  const right=a===q[1];if(right)ok++;
+  d.querySelectorAll("button").forEach(b=>{
+    const v=+b.dataset.a;
+    if(v===q[1])b.classList.add("good");else if(v===a)b.classList.add("bad");
+    b.disabled=true;
+  });
+  const flag=q[2]&&(q[2].startsWith("✏️")||q[2].startsWith("⚠️"));
+  d.querySelector(".fb").innerHTML=`<b class="${right?"r":"w"}">${right?"Correct.":"Incorrect."}</b> Réponse : ${q[1]?"Vrai":"Faux"}.`+(q[2]?`<div class="${flag?"flag":"note"}"></div>`:"");
+  if(q[2])d.querySelector(".fb div").textContent=q[2];
+  upd();
+}
+function upd(){$("#score").textContent=`${ok} / ${tot} (sur ${items.length})`}
+sel.onchange=()=>build(false);
+$("#shuf").onclick=()=>build(true);
+$("#rst").onclick=()=>build(false);
+build(false);
+</script>
+
+<script>
+(function(){
+// [tag, énoncé, [[titre, texte], ...], note optionnelle (ℹ️ info / ⚠️ à vérifier)]
+var OQ=[
+["Examen série B – Q1",
+ "Après avoir présenté et expliqué les différentes mesures managériales et financières recherchées par les investisseurs institutionnels, préciser pourquoi elles correspondent aux attentes institutionnelles.",
+ [["Licenciements","Moins de salaires à payer, donc charges d’exploitation en baisse et résultat net en hausse (toutes choses égales par ailleurs). Le marché le perçoit positivement et le cours monte."],
+  ["Démembrement / scission / opérabilité","L’entreprise devient plus attrayante pour un repreneur. En cas d’OPA, les investisseurs sont intéressés par la prime proposée et la valorisation boursière augmente."],
+  ["Politique de dividendes plus généreuse","Une part plus importante du résultat net est versée aux actionnaires. C’est un signal que leurs intérêts sont pris en compte : la demande d’actions augmente, donc le cours aussi."],
+  ["Pourquoi elles correspondent aux attentes","L’objectif des investisseurs institutionnels est la maximisation de la valorisation boursière afin de réaliser une plus-value à la revente. Chacune de ces mesures pousse le cours à la hausse."]]],
+
+["Examen série B – Q3",
+ "Après avoir expliqué la notion d’activisme institutionnel, présenter les différentes étapes qui pourraient conduire au rachat de l’entreprise par une autre entreprise.",
+ [["Notion d’activisme","Engagement proactif d’investisseurs institutionnels, en général minoritaires, dans la gouvernance d’une entreprise pour provoquer des changements (stratégie, situation financière, gouvernance) et créer de la valeur pour les actionnaires."],
+  ["Étape 1 : discussion informelle","Dialogue avec les dirigeants et des membres du Conseil d’Administration sur les changements souhaités."],
+  ["Étape 2 : campagne publique","En cas d’échec, recours aux médias pour rallier le soutien des actionnaires minoritaires."],
+  ["Étape 3 : OPA organisée ou revente","Si les attentes ne sont toujours pas satisfaites : organisation d’une OPA par un tiers (souvent via une coalition) ou revente des participations, ce qui peut fragiliser l’entreprise."],
+  ["Lien avec le rachat","Désinvestissements et scission rendent l’entreprise plus « opérable » ; la prime d’OPA attire ensuite les actionnaires."]]],
+
+["Cours",
+ "Présenter les points communs et les différences entre la configuration capitalistique du marché belge et celle du marché français.",
+ [["Point commun : l’histoire","Volonté initiale de maintenir la propriété nationale des entreprises et de les protéger contre les rachats étrangers. Belgique : via la Société Générale de Belgique (SGB). France : via les nationalisations du début des années 1980."],
+  ["Point commun : l’effondrement","SGB rattachée au groupe Suez ; entreprises françaises reprivatisées à partir de 1986. Dans les deux cas, on retrouve un capitalisme patrimonial traditionnel."],
+  ["Différence : Belgique","Capitalisme patrimonial traditionnel surtout familial : peu perméable aux investisseurs institutionnels (II), peu de mouvements d’OPA."],
+  ["Différence : France","Après les reprivatisations, des noyaux durs (BNP, AXA…) se créent, puis explosent avec la mondialisation et le retrait des banques. Le vide est comblé par les II. Le capital est plus ouvert, donc plus attractif pour eux. Le caractère « traditionnel » vient de la forte présence de l’État."]]],
+
+["Cours",
+ "Présenter les caractéristiques des entreprises susceptibles d’être visées par de l’activisme institutionnel.",
+ [["Cours de Bourse sous-évalué","Le cours ne reflète pas tout le potentiel de création de valeur."],
+  ["Faible croissance, rentabilité élevée","Croissance modérée (ventes, rendement des actifs) mais rentabilité nettement supérieure à celle d’entreprises comparables non ciblées."],
+  ["Moindre redistribution des profits","Les profits sont moins distribués que la moyenne du secteur : les II y voient des ressources mal utilisées, qui seraient mieux employées en dividendes ou en projets plus rentables."],
+  ["Défenses contre les OPA","Les II peuvent cibler ces entreprises pour lever ces barrières et faciliter restructurations ou prises de contrôle."],
+  ["Capital accessible, coalitions possibles","Le capital est relativement ouvert et des alliances avec d’autres actionnaires sont envisageables, ce qui renforce l’influence des activistes."]]],
+
+["Cours",
+ "En prenant appui sur la notion d’attachement actionnarial, présenter les différentes typologies d’actionnaires présents dans la structure de propriété des entreprises.",
+ [["Avec attachement : famille","Attachement émotionnel. Cascade de holdings, capital cadenassé, peu d’OPA hostiles. Stratégie prudente, peu d’endettement, rémunération généreuse, présence au CA."],
+  ["Avec attachement : État / collectivités","Attachement raisonné. Secteurs sensibles (armement, énergie…), stratégie conservatrice, rémunération importante, peu perméable aux fusions-acquisitions."],
+  ["Avec attachement : salariés","Rarement actionnaire principal. Attachement à la fois raisonné et émotionnel (leur salaire dépend de l’entreprise)."],
+  ["Avec attachement : autocontrôle","Part du capital détenue par l’entreprise elle-même via le rachat d’actions propres. Capital stable, attachement rationnel."],
+  ["Sans attachement : investisseurs institutionnels","Long terme : veulent faire évoluer la gestion, parfois en entrant au CA. Court terme : participation plus faible, diversification de portefeuille. Objectif : maximiser la valeur boursière pour la plus-value ; entreprises souvent concernées par des fusions-acquisitions."],
+  ["Sans attachement : partenaires industriels","Entreprise qui détient une partie du capital d’une autre : peut être un premier pas vers une reprise."],
+  ["Sans attachement : flottant","Galaxie de petits porteurs sans représentation ni influence. Faible pouvoir actionnarial, grande latitude managériale, entreprises plus risquées. Plus le flottant est élevé, plus le capital est dispersé."]]],
+
+["Cours",
+ "Après avoir défini les investisseurs institutionnels, les classer, montrer les objectifs poursuivis et les liens avec la théorie de l’agence.",
+ [["Définition","Entités qui collectent l’épargne et prennent des participations dans d’autres entreprises : banques, assurances, fonds de pension, fonds d’investissement…"],
+  ["Classements possibles","National / international ; passif / actif ; court terme / long terme ; coté / non coté ; participations dans des entreprises cotées / non cotées."],
+  ["Objectif","Maximiser la valorisation boursière pour réaliser une plus-value à la revente. Actif (long terme) : en s’impliquant dans la gestion. Passif (court terme) : sans s’impliquer, dans une logique de diversification."],
+  ["Lien avec la théorie de l’agence","Principal (actionnaire) et agent (dirigeant) peuvent avoir des intérêts divergents, d’où des coûts d’agence, surtout quand le capital est très éclaté. Un II avec une participation importante agit comme modérateur : il pousse les dirigeants à aller dans le sens des actionnaires, sous peine de remplacement."]]],
+
+["Cours",
+ "Démontrer en quoi les investisseurs institutionnels pourraient être considérés comme des modérateurs de problèmes d’agence.",
+ [["Problèmes visés","Comportement opportuniste des dirigeants, investissement excessif ou insuffisant, manipulation de l’information, dilution de la propriété."],
+  ["Surveillance renforcée","Ils protègent leurs investissements en surveillant les dirigeants, ce qui réduit les asymétries d’information et aligne les intérêts."],
+  ["Engagement proactif","Échanges avec la direction, participation aux assemblées générales : influence sur les décisions stratégiques."],
+  ["Alignement à long terme","Des investisseurs comme les fonds de pension encouragent la stabilité et la croissance plutôt que les gains immédiats."],
+  ["Meilleure gouvernance","Transparence, comités indépendants, rémunération liée à la performance : moins de marge pour les comportements déviants."]]],
+
+["Cours",
+ "Quelles sont les quatre grandes rubriques sur lesquelles les investisseurs institutionnels pourraient posséder une influence ? Expliquer.",
+ [["Orientations stratégiques et financières","Pouvoir de proposition et de vote en AG : rachats d’actions propres, politique de dividendes, structure du capital."],
+  ["Valorisation boursière","Leur entrée au capital est un signal (sous-valorisation perçue) que les petits investisseurs suivent : effet mouton."],
+  ["Pérennisation des activités","Acteurs de long terme, ils peuvent encourager des pratiques durables, la R&D et l’anticipation des défis futurs."],
+  ["Configuration générale d’un marché","Agissant collectivement, leurs investissements massifs orientent les tendances : valorisations, fusions-acquisitions, flux de capitaux."]]],
+
+["Cours",
+ "Présenter les variables qui permettent de différencier un investisseur institutionnel actif d’un investisseur institutionnel passif.",
+ [["Orientation","Actif : volonté de renouveau industriel. Passif : spéculation à court terme, diversification de portefeuille."],
+  ["Implication dans la gouvernance","Actif : forte, pour régler les problèmes d’agence. Passif : faible voire nulle, rôle d’observateur."],
+  ["Niveau de participation","Actif : élevé (souvent plus de 10 %). Passif : faible (généralement 2 à 5 %)."],
+  ["Liquidité","Actif : investissement peu réversible (une sortie brutale enverrait un signal négatif). Passif : liquidité élevée, sortie rapide possible."],
+  ["Durée de présence","Actif : long terme (10 à 15 ans). Passif : court terme, approche opportuniste."],
+  ["Structure du portefeuille","Actif : peu de participations mais importantes. Passif : portefeuille très diversifié, participations faibles."]],
+ "ℹ️ Selon les formulations, on parle de cinq ou six variables ; six sont détaillées ici."],
+
+["Cours",
+ "Définir la notion d’activisme institutionnel.",
+ [["Définition","Engagement proactif des investisseurs institutionnels dans la gouvernance d’une entreprise pour provoquer des changements significatifs dans son comportement ou ses règles, afin d’améliorer la valeur pour tous les actionnaires."],
+  ["Dimensions","Contrôle de la gouvernance (AG, organes de décision) ; efforts proactifs pour changer le comportement de la firme ; usage des prérogatives des minoritaires ; voix et droits de vote pour maximiser la valeur."],
+  ["Boîte à outils","Discussion informelle, puis campagne publique en cas d’échec, puis OPA organisée ou revente des participations."]]],
+
+["Cours",
+ "Présenter et expliquer les variables susceptibles de repérer les rapports de force capitalistiques sur un marché.",
+ [["V1 : poids du plus grand actionnaire","Taille de l’actionnaire de référence par rapport au flottant (petits porteurs, instables et peu actifs en AG). Plus V1 est élevée, plus l’actionnaire de référence pèse."],
+  ["V2 : écart entre le 1er et le 2e actionnaire","V2 = (part 1 − part 2) / part 1. Plus V2 est proche de 100 %, plus le deuxième actionnaire est en position de faiblesse face au premier."],
+  ["V3 : poids des autres actionnaires","V3 = (part max − part moyenne des autres) / part max. Plus V3 est élevée, plus les autres actionnaires sont petits face à l’actionnaire de référence."],
+  ["V4 : nombre d’autres actionnaires","Nombre d’actionnaires présents en même temps que l’actionnaire de référence : beaucoup = pouvoir dispersé, peu = pouvoir concentré."]],
+ "ℹ️ L’énoncé parle parfois de trois variables, mais quatre sont généralement présentées. ⚠️ Formule exacte de V1 à vérifier avec le cours."],
+
+["Cours",
+ "Présenter et expliquer les différentes formes de capitalisme théoriquement envisageables sur un marché donné.",
+ [["Capitalisme de marché financier (shareholders)","Typique des marchés anglo-saxons : actionnariat dispersé, aucun actionnaire en position de force, pression actionnariale limitée. Grande autonomie et latitude managériale pour les dirigeants."],
+  ["Capitalisme patrimonial traditionnel","Actionnaire dominant (famille ou État) qui impose sa vision. Fort attachement à la continuité, à l’autonomie et à l’indépendance de l’entreprise."],
+  ["Capitalisme patrimonial moderniste","Forte présence et implication des investisseurs institutionnels, souvent actionnaires de référence. Objectif central : maximiser la valorisation boursière et la création de valeur actionnariale."]]],
+
+["Cours",
+ "Présenter et développer la notion de coalition actionnariale.",
+ [["Définition","Groupe d’actionnaires partageant des intérêts communs et collaborant pour atteindre des objectifs précis : long terme (consolidation de l’actionnariat) ou court terme (extraction de rente boursière)."],
+  ["Forme","Peut reposer sur une relation contractuelle : les actionnaires agissent de concert."],
+  ["Intérêt","Des actionnaires de même profil, par exemple plusieurs II, se coalisent pour maximiser leur influence et leur fonction d’utilité."],
+  ["Mesure","V1 = poids de la plus grande coalition (part de la première coalition rapportée au capital hors flottant). V2 = (coalition 1 − coalition 2) / coalition 1. Valeurs élevées : coalition dominante en position de force."],
+  ["Exemple : Lagardère","La famille Lagardère (environ 8 %) cherche du soutien. Amber, activiste, veut changer la gestion. Vivendi, d’abord chevalier blanc, rachète la part d’Amber et prend le contrôle du groupe."]]],
+
+["Cours",
+ "Présenter et développer la vision principal/principal de la théorie de l’agence dans sa version reformulée.",
+ [["Point de départ","Théorie de l’agence classique : conflit entre actionnaires (principaux) et dirigeants (agents) à cause de divergences d’intérêts."],
+  ["Évolution","Le conflit se déplace entre coalitions actionnariales, surtout quand la structure de propriété est complexe et compte plusieurs groupes importants."],
+  ["Analyse","On compare les rapports de force entre coalitions avec V1 (poids de la plus grande) et V2 (distance entre la première et la deuxième)."],
+  ["Lecture","V1 et V2 élevées : coalition dominante renforcée, moins de négociation et de contre-pouvoirs. Valeurs plus faibles : relations plus équilibrées. Coalitions typiquement opposées : long terme contre court terme."]]],
+
+["Cours",
+ "Expliquer la notion de cœur financier et ses implications en termes de mouvements sur le capital des entreprises.",
+ [["Définition","Ensemble d’alliances intergroupes (les pôles), stables et durables, qui jouent un rôle central dans le paysage financier."],
+  ["Fonction","Créer des conditions durables et favorables à la restructuration industrielle (fusions, acquisitions)."],
+  ["Implications sur le capital","Relations durables (participations croisées), gestion des décisions d’achat, de vente et d’investissement, moteur de changements structurels dans la composition du capital."],
+  ["Exemple","France, années 90 : pôles autour de SG, BNP, AXA/UAP."]]],
+
+["Cours",
+ "En quoi le cas de l’entreprise Lagardère constitue-t-il une illustration de la théorie de l’hubris ?",
+ [["La théorie","Dans une OPA, le dirigeant de l’initiateur peut agir par ego ou excès de confiance, pour prendre le contrôle à tout prix plutôt que par rationalité économique."],
+  ["Arnaud Lagardère","Il vit l’activisme d’Amber comme une remise en cause personnelle. Il crut que le statut de SCA le protégerait indéfiniment (contrôle avec environ 7 à 13 % du capital) et n’anticipa pas la coalition adverse."],
+  ["Choix stratégiques","Abandon du cœur de métier industriel (aéronautique, EADS) pour une nébuleuse d’activités sans synergies (médias, sport, travel retail) : groupe vulnérable au démantèlement."],
+  ["Réseau d’amis","Recours à des chevaliers blancs (Vivendi/Bolloré, LVMH/Arnault) sur la base de relations personnelles ; ces alliés agissaient par cynisme utilitaire."],
+  ["Côté Vivendi","L’entrée de LVMH au capital accélère la stratégie de Vivendi : le prix devient très élevé, c’est un combat de pouvoir pour évincer un rival. Amber joue le rôle de pivot."]]],
+
+["Cours",
+ "Quelle est la différence entre la situation financière en France et en Belgique ?",
+ [["Cadre général","Six configurations de propriété, du modèle stakeholders (famille, État, autocontrôle, fort attachement) au modèle shareholders (capital éclaté, II tournés vers le profit), et trois formes de capitalisme : marché financier, patrimonial traditionnel (Belgique), patrimonial moderniste (France)."],
+  ["Belgique","SGB créée en 1822 pour préserver l’indépendance économique nationale. Déclin dans les années 70-80 (désinvestissements, gestion trop centralisée). En 1988, OPA hostile de De Benedetti : la SGB appelle Suez, le centre de décision passe à Paris. Marché réduit, familial, dominé par le capitalisme patrimonial traditionnel (BEL20)."],
+  ["France","Nationalisations (après-guerre, 1981) puis reprivatisation dès 1986. Noyaux durs de banques (BNP, AXA, SG) avec participations croisées, qui éclatent avec la bataille de Paribas. Entrée massive d’II étrangers : capitalisme patrimonial moderniste. CAC 40 plus ouvert aux fusions-acquisitions, avec une protection étatique des secteurs essentiels."],
+  ["Cas Lagardère","Contrôle malgré une participation minoritaire grâce à la SCA. Entrée d’Amber (2020), Vivendi s’allie à Amber et monte à environ 45 % du capital : fragilité des protections juridiques face à l’activisme."]],
+ "⚠️ Date de la bataille de Paribas à vérifier (fin des années 90, autour de 1999)."]
+];
+
+var state=OQ.map(function(){return {shown:false,r:null}});
+var root=document.getElementById("oq-list"),flt=document.getElementById("oq-filter"),sc=document.getElementById("oq-score");
+function score(){
+  var ok=0,ko=0;state.forEach(function(s){if(s.r===1)ok++;else if(s.r===0)ko++});
+  sc.textContent="Je savais : "+ok+" · À revoir : "+ko+" (sur "+OQ.length+")";
+}
+function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+function build(){
+  var f=flt.value;root.innerHTML="";var n=0;
+  OQ.forEach(function(q,i){
+    var s=state[i];
+    if(f==="exam"&&q[0].indexOf("Examen")!==0)return;
+    if(f==="redo"&&s.r!==0)return;
+    n++;
+    var card=el("article","oq-card");
+    card.appendChild(el("div","oq-tag",q[0]));
+    card.appendChild(el("p","oq-q",q[1]));
+    var show=el("button",null,s.shown?"Masquer la réponse":"Voir la réponse");
+    var ans=el("div","oq-ans");ans.hidden=!s.shown;
+    var ol=el("ol","oq-pts");
+    q[2].forEach(function(p){var li=el("li");li.appendChild(el("b",null,p[0]+". "));li.appendChild(document.createTextNode(p[1]));ol.appendChild(li)});
+    ans.appendChild(ol);
+    if(q[3]){var flag=q[3].indexOf("⚠️")>=0;ans.appendChild(el("div",flag?"flag":"note",q[3]))}
+    var self=el("div","oq-self");
+    var b1=el("button",s.r===1?"on-ok":null,"Je savais"),b0=el("button",s.r===0?"on-ko":null,"À revoir");
+    b1.onclick=function(){s.r=(s.r===1?null:1);score();build()};
+    b0.onclick=function(){s.r=(s.r===0?null:0);score();build()};
+    self.appendChild(b1);self.appendChild(b0);ans.appendChild(self);
+    show.onclick=function(){s.shown=!s.shown;ans.hidden=!s.shown;show.textContent=s.shown?"Masquer la réponse":"Voir la réponse"};
+    card.appendChild(show);card.appendChild(ans);root.appendChild(card);
+  });
+  if(!n)root.appendChild(el("p","oq-empty",f==="redo"?"Aucune question marquée « À revoir » pour l’instant.":"Aucune question."));
+}
+flt.onchange=build;
+document.getElementById("oq-reset").onclick=function(){state.forEach(function(s){s.shown=false;s.r=null});score();build()};
+score();build();
+})();
+</script>
+</body>
+</html>

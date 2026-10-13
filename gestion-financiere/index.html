@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestion financière – V ou F d'examen</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--ink:#1c2430;--mute:#5d6877;--line:#d9dee6;--ok:#1f7a4d;--okbg:#e3f4ea;--ko:#b3322b;--kobg:#fbe7e5;--warn:#8a5a00;--warnbg:#fff3d6;--acc:#1d4f91}
+@media(prefers-color-scheme:dark){:root{--bg:#14181f;--card:#1d232d;--ink:#e8ecf2;--mute:#9aa6b6;--line:#303947;--ok:#6fd3a0;--okbg:#17352a;--ko:#ff9a92;--kobg:#3b1f1d;--warn:#f0c46a;--warnbg:#3a2f12;--acc:#8db8f0}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Georgia,"Times New Roman",serif}
+main{max-width:720px;margin:0 auto;padding:16px 16px 64px}
+header{position:sticky;top:0;background:var(--bg);padding:12px 0;border-bottom:1px solid var(--line);z-index:2}
+h1{font-size:1.25rem;margin:0 0 8px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-family:system-ui,sans-serif;font-size:.9rem}
+select,button{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);cursor:pointer}
+select:focus-visible,button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+#score{margin-left:auto;font-weight:600}
+h2{font-size:1.05rem;margin:28px 0 8px;color:var(--acc)}
+.q{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0}
+.q p{margin:0 0 10px}
+.btns{display:flex;gap:8px;font-family:system-ui,sans-serif}
+.btns button{min-width:84px}
+.q.done .btns button{cursor:default}
+.btns button.good{background:var(--okbg);border-color:var(--ok);color:var(--ok);font-weight:600}
+.btns button.bad{background:var(--kobg);border-color:var(--ko);color:var(--ko)}
+.fb{display:none;margin-top:10px;font-family:system-ui,sans-serif;font-size:.9rem}
+.q.done .fb{display:block}
+.fb b.r{color:var(--ok)}.fb b.w{color:var(--ko)}
+.note{margin-top:6px;color:var(--mute)}
+.flag{background:var(--warnbg);color:var(--warn);padding:6px 8px;border-radius:6px;margin-top:6px}
+</style>
+</head>
+<body>
+<div style="max-width:720px;margin:0 auto;padding:14px 20px 0"><a href="../index.html" style="font:13.5px system-ui,sans-serif;color:#6B7680;text-decoration:none">← Choix du cours</a></div>
+<main>
+<header>
+<h1>Gestion financière – V ou F d'examen</h1>
+<div class="bar">
+<select id="ch" aria-label="Chapitre"></select>
+<button id="shuf">Mélanger</button>
+<button id="rst">Recommencer</button>
+<span id="score" aria-live="polite"></span>
+</div>
+</header>
+<div id="list"></div>
+</main>
+<script>
+// [énoncé, 1=Vrai / 0=Faux, note]. Note commençant par ✏️ = réponse corrigée, ⚠️ = à vérifier.
+const D=[
+["1. Circuit financier fondamental",[
+["La mise en réserves des bénéfices est une opération de financement interne.",1],
+["Le coût d'une source de financement dépend notamment de la durée de l'apport.",1],
+["Une garantie accroît le coût d'une source de financement.",0,"La garantie réduit le risque du prêteur, donc le coût."],
+["Les créanciers financiers sont rémunérés avant le prélèvement fiscal dans le chef de l'entreprise.",1,"Les intérêts sont déductibles."],
+["L'opération de collecte de capitaux est une opération de financement externe.",1],
+["Les décisions de désinvestissement peuvent améliorer les possibilités d'autofinancement.",1],
+["Les sources de financement à l'actif sont moins coûteuses que celles qui apparaissent au passif.",0,"Les sources de financement sont au passif. L'actif représente leurs emplois."],
+["L'autofinancement accroît le risque supporté par les créanciers financiers.",0,"Il renforce les fonds propres et la capacité d'emprunt."],
+["L'émission d'actions et l'émission d'obligations sont toutes deux des opérations de financement externe.",1],
+["Les garanties liées au financement accroissent le risque du prêteur et donc le rendement exigé.",0,"Elles diminuent le risque, donc le rendement exigé."],
+["Le choix des sources de financement influence la rentabilité des projets d'investissement.",1],
+["Les intérêts et la plus-value constituent les deux parties de la rémunération actionnariale.",0,"Ce sont les dividendes et la plus-value."]]],
+["2. Les différentes sources de financement",[
+["Le capital-risque est un financement adapté pour soutenir le développement de la petite entreprise en croissance.",1],
+["Une IPO sur Euronext nécessite deux années de comptes audités aux normes IFRS et au moins 50 % du capital placé dans le public.",0,"3 ans de comptes audités IFRS, au moins 25 % du capital dans le public, informations trimestrielles."],
+["Dans un placement garanti, c'est la banque introductrice qui fixe le prix d'introduction.",1],
+["L'IPO donne un premier accès à l'épargne publique.",1],
+["Une seasoned equity offering avec right offer permet aux actionnaires en place de souscrire prioritairement à une augmentation de capital.",1],
+["Les IPO peuvent concerner des émissions primaires et secondaires.",1],
+["Le K-development intervient quand le fondateur d'une entreprise veut sortir du capital.",0,"C'est le K-transmission."],
+["Les SEO peuvent être assorties de droits préférentiels de souscription.",1],
+["Les obligations avec warrant font partie du financement hybride.",1]]],
+["3. Les coûts de financement",[
+["Plus le coût du financement est élevé, plus la VAN des investissements est élevée.",0,"Le taux d'actualisation est au dénominateur : plus il monte, plus la VAN baisse."],
+["Plus le taux d'imposition des bénéfices augmente, plus le coût du financement obligataire de l'entreprise qui paie des impôts diminue.",1,"k'i = ki × (1 − ts)."],
+["Pour calculer le coût des actions ordinaires, l'approche par les flux de dividendes est plus performante que celle du CAPM.",0,"Deux approches différentes, hypothèses différentes."],
+["Le coût des actions ordinaires correspond au taux de rendement minimum que l'entreprise doit réaliser sur la part d'un projet financée par fonds propres pour laisser inchangé le cours de l'action.",1],
+["Les FP coûtent toujours plus cher que les obligations.",1],
+["L'approche du CAPM est plus performante que l'approche du MEDAF.",0,"CAPM = MEDAF, c'est le même modèle."],
+["Les créanciers financiers sont toujours rémunérés en priorité par rapport aux actionnaires.",1],
+["Des titres de même risque doivent offrir le même rendement si les marchés sont à l'équilibre.",1],
+["⚠️ À VÉRIFIER – L'autofinancement est moins cher que le financement interne car son coût n'est pas réel : c'est un coût d'opportunité.",1,"⚠️ À VÉRIFIER. Réponse du PDF conservée. Formulation étrange : l'autofinancement EST du financement interne (coquille pour « externe » ?). Le cours dit seulement que son coût est un coût d'opportunité égal à ke."]]],
+["4. CAPM",[
+["Par rapport à un investissement en actions, combiner placement sans risque et portefeuille de marché réduit le risque tout en conservant un couple rendement-risque optimal.",1],
+["Il est théoriquement possible de trouver des actions dont le coefficient bêta vaut 5.",1],
+["Pour une variance de rendement donnée, un portefeuille efficient présente l'espérance de rendement maximale.",1],
+["Le bêta représente le coefficient de sensibilité entre la variation relative du résultat d'exploitation et la variation relative du volume des affaires. Il mesure la volatilité des rendements du titre par rapport aux rendements du marché.",0,"Seule la 2e phrase est correcte. La 1re décrit le levier opérationnel."],
+["Le coût du capital action dépend totalement du coefficient de sensibilité de l'action.",0,"ke = RF + β × (E(RM) − RF) : dépend aussi de RF et de la prime de marché."],
+["L'investisseur risk averse emprunte au taux sans risque pour investir dans le portefeuille de marché.",0,"Il prête au taux RF. L'emprunt est pour qui accepte plus de risque."],
+["Le CAPM présente dans une même équation la notion de rendement et celle de risque.",1],
+["Les investisseurs préfèrent toujours les modèles ex post pour tester la stabilité des taux d'intérêt sur les marchés obligataires parfaits.",0],
+["Markowitz montre que le rendement d'un portefeuille vaut la moyenne des rendements des titres qui le composent.",0,"Moyenne PONDÉRÉE des espérances de rendement."],
+["Les titres dont le bêta est supérieur à 1 sont des titres défensifs.",0,"Ce sont des titres agressifs."],
+["Plus le bêta d'une action est élevé, plus le financement par action coûte cher à l'entreprise.",1],
+["Plus le bêta d'une action est élevé, plus l'investisseur s'attend à un rendement élevé.",1],
+["Dans la réalité, le taux Rf reflétant le risque zéro n'existe pas.",1]]],
+["5. Hypothèses des propositions de Modigliani et Miller",[
+["La rationalité des agents implique que l'information soit gratuite et également disponible pour tous.",0,"C'est la perfection des marchés des capitaux qui implique cela."],
+["À risque donné, toutes les entreprises doivent avoir la même variabilité de leur résultat d'exploitation.",1],
+["Modigliani et Miller posent l'hypothèse que l'entreprise renonce à l'autofinancement pour développer leurs propositions.",1],
+["La rationalité des agents implique que les marchés des capitaux soient parfaits.",0,"Deux hypothèses distinctes."],
+["Les coûts de transaction sont considérés comme nuls à cause de l'absence de rationnement des capitaux dû à la perfection des marchés.",0,"Les coûts de transaction nuls font partie de la définition de la perfection des marchés."],
+["✏️ CORRIGÉ – À VÉRIFIER – L'absence de fiscalité dans la 1re proposition de MM (1958) provient de la perfection des marchés de capitaux.",0,"✏️ CORRIGÉ – À VÉRIFIER. Le PDF disait VRAI. Dans le cours, l'absence de fiscalité est une hypothèse à part (n°7), distincte de la perfection des marchés (n°1)."],
+["La distribution intégrale des bénéfices implique l'absence du risque de défaillance.",0],
+["L'absence du risque de défaillance est liée à l'absence de rationnement des capitaux.",1],
+["✏️ CORRIGÉ – À VÉRIFIER – Dans les hypothèses de MM, l'entreprise ne paie pas d'impôts.",1,"✏️ CORRIGÉ – À VÉRIFIER. Le PDF disait FAUX. L'hypothèse 7 de MM1 est l'absence de fiscalité. FAUX seulement si l'énoncé inclut MM2."]]],
+["6. Première proposition de MM (1958, sans impôts)",[
+["Dans leur raisonnement d'arbitrage, Modigliani et Miller partent d'une situation de déséquilibre.",1],
+["(MM1) Les décisions de financement sont incapables d'augmenter la valeur de la firme : seules les décisions d'investissement peuvent la faire varier.",1],
+["(MM1) Le coût du capital de l'entreprise dépend de son niveau d'endettement.",0,"ko = Ra : il ne dépend que du risque économique."],
+["MM utilisent un raisonnement d'arbitrage pour déterminer le prix d'équilibre des actions.",1],
+["La valeur marchande des fonds propres se calcule en rapportant l'EBIT au rendement exigé par les actionnaires de l'entreprise non endettée.",1],
+["La rentabilité d'exploitation se calcule en rapportant l'EBIT à la valeur de l'entreprise non endettée.",1],
+["Dans l'entreprise non endettée, l'actionnaire capte l'entièreté de la rentabilité économique.",1],
+["La structure financière n'influence pas la situation de risque des actionnaires.",0,"Plus de dette, plus de risque financier, donc plus de rendement exigé (ke)."],
+["L'illusion financière n'existe pas.",1],
+["Le privilège de l'actionnaire privilégié est d'obtenir des dividendes récupérables.",0,"Seulement pour un des 3 types d'actions privilégiées."],
+["Plus le levier financier est élevé, plus la prime de risque exigée par les actionnaires est importante.",1]]],
+["7. Seconde proposition de MM (1963, avec impôts)",[
+["Dans leur deuxième proposition, Modigliani et Miller utilisent un modèle d'arbitrage.",0,"L'arbitrage n'est utilisé que dans MM1."],
+["(MM2) Les décisions de financement sont incapables d'augmenter la valeur de la firme : seules les décisions d'investissement peuvent la faire varier.",0,"V(ET) = V(NT) + ts × D."],
+["(MM2) Le coût du capital de l'entreprise dépend de son niveau d'endettement.",1],
+["L'actualisation de toutes les économies fiscales futures correspond à la valeur créée par la dette.",1],
+["Le risque de perte fiscale n'est pas pris en compte dans le raisonnement de base de MM 1963.",1],
+["L'endettement n'est pas neutre : il réduit le coût moyen pondéré du capital.",1],
+["L'endettement est neutre : il ne parvient pas à réduire le coût moyen du capital.",0]]],
+["8. Les théories de l'endettement",[
+["Les coûts de défaillance a priori (Malécot, 1984) sont à prendre en compte par l'entreprise bien avant une quelconque faillite.",1],
+["La static trade-off theory propose de déterminer le ratio optimal d'endettement.",1],
+["Les actionnaires d'une entreprise endettée exigent un rendement équivalent à la rentabilité économique majoré d'une prime de risque fonction du risque de faillite.",1],
+["✏️ CORRIGÉ – À VÉRIFIER – La structure de financement influence la valeur.",1,"✏️ CORRIGÉ – À VÉRIFIER. Le PDF disait FAUX (« c'est l'actif »), logique de MM1 uniquement. Avec MM2 et Myers, la structure influence la valeur. FAUX seulement si l'énoncé précise MM1."],
+["De Angelo et Masulis (1980) enrichissent le raisonnement de MM en intégrant la fiscalité des personnes physiques.",0,"C'est Miller (1977). De Angelo et Masulis : déductibilité hors dette."],
+["Les coûts de faillite a posteriori découlent de la mise en faillite effective de l'entreprise.",1],
+["Le risque de faillite est un des éléments qui peut expliquer pourquoi l'intérêt de l'endettement est limité.",1],
+["⚠️ À VÉRIFIER – Plus le levier financier est élevé, plus le coût moyen pondéré du capital est faible.",0,"⚠️ À VÉRIFIER. FAUX gardé : le CMPC baisse puis remonte (courbe en U avec les coûts de détresse). Dans MM2 pur, ce serait VRAI."],
+["L'aléa moral représente le risque pour les banquiers de voir les actifs substitués par les entreprises auxquelles ils viennent d'octroyer un crédit.",1],
+["Les structures financières doivent présenter le même coût moyen pondéré du capital.",0,"Vrai seulement dans MM1."]]],
+["9. La politique du dividende",[
+["Le payout rate est la partie du bénéfice qui constitue l'autofinancement.",0,"C'est la partie distribuée en dividendes. Le payback rate = rétention."],
+["Les modérés, dont font partie Modigliani et Miller, montrent qu'il vaut mieux payer beaucoup de dividendes pour accroître la valeur de l'entreprise.",0,"Les modérés concluent à la neutralité."],
+["Les conservateurs plaident pour une diminution du taux de distribution des dividendes.",0,"Ils plaident pour des dividendes croissants."],
+["La valeur de marché des FP est inchangée par la politique des dividendes (modérés).",1],
+["Le raisonnement des conservateurs est défendable pour les entreprises à maturité.",1],
+["Pour les conservateurs, l'entreprise peut verser tous les dividendes qu'elle veut moyennant l'émission d'actions nouvelles.",0,"C'est le raisonnement des modérés."],
+["Le payback rate est toujours plus élevé que le payout rate.",0],
+["Les études empiriques montrent que les entreprises dont le bénéfice augmente n'augmentent le payout rate qu'après au moins 2 années de croissance.",1],
+["Les conservateurs montrent la neutralité des dividendes sur la valeur de l'entreprise.",0,"C'est la position des modérés."],
+["Les conservateurs plaident pour le paiement de faibles dividendes.",0,"Ce sont les radicaux."]]]
+];
+const $=s=>document.querySelector(s);
+let items=[],ok=0,tot=0;
+const sel=$("#ch");
+sel.innerHTML='<option value="-1">Tous les chapitres</option>'+D.map((c,i)=>`<option value="${i}">${c[0]}</option>`).join("");
+function build(shuffle){
+  const v=+sel.value;ok=tot=0;
+  let list=D.flatMap((c,ci)=>c[1].map(q=>({ci,q}))).filter(x=>v<0||x.ci===v);
+  if(shuffle)list.sort(()=>Math.random()-.5);
+  const root=$("#list");root.innerHTML="";
+  let last=-1;
+  list.forEach(({ci,q},n)=>{
+    if(!shuffle&&ci!==last){last=ci;const h=document.createElement("h2");h.textContent=D[ci][0];root.appendChild(h)}
+    const d=document.createElement("div");d.className="q";
+    d.innerHTML=`<p></p><div class="btns"><button data-a="1">Vrai</button><button data-a="0">Faux</button></div><div class="fb"></div>`;
+    d.querySelector("p").textContent=(shuffle?`[${D[ci][0].split(".")[0]}] `:"")+q[0];
+    d.querySelectorAll("button").forEach(b=>b.onclick=()=>answer(d,q,+b.dataset.a));
+    root.appendChild(d);
+  });
+  items=list;upd();
+}
+function answer(d,q,a){
+  if(d.classList.contains("done"))return;
+  d.classList.add("done");tot++;
+  const right=a===q[1];if(right)ok++;
+  d.querySelectorAll("button").forEach(b=>{
+    const v=+b.dataset.a;
+    if(v===q[1])b.classList.add("good");else if(v===a)b.classList.add("bad");
+    b.disabled=true;
+  });
+  const flag=q[2]&&(q[2].startsWith("✏️")||q[2].startsWith("⚠️"));
+  d.querySelector(".fb").innerHTML=`<b class="${right?"r":"w"}">${right?"Correct.":"Incorrect."}</b> Réponse : ${q[1]?"Vrai":"Faux"}.`+(q[2]?`<div class="${flag?"flag":"note"}"></div>`:"");
+  if(q[2])d.querySelector(".fb div").textContent=q[2];
+  upd();
+}
+function upd(){$("#score").textContent=`${ok} / ${tot} (sur ${items.length})`}
+sel.onchange=()=>build(false);
+$("#shuf").onclick=()=>build(true);
+$("#rst").onclick=()=>build(false);
+build(false);
+</script>
+</body>
+</html>
